@@ -26,9 +26,42 @@ mod process;
 
 use fs::*;
 use process::*;
+use crate::sync::UPSafeCell;
+use lazy_static::*;
+
+/// Global syscall counter
+struct SyscallCounter {
+    counts: [usize; 512], // Support up to 512 different syscall IDs
+}
+
+impl SyscallCounter {
+    fn new() -> Self {
+        Self {
+            counts: [0; 512],
+        }
+    }
+    
+    fn increment(&mut self, syscall_id: usize) {
+        if syscall_id < 512 {
+            self.counts[syscall_id] += 1;
+        }
+    }
+}
+
+lazy_static! {
+    static ref SYSCALL_COUNTER: UPSafeCell<SyscallCounter> = unsafe {
+        UPSafeCell::new(SyscallCounter::new())
+    };
+}
 
 /// handle syscall exception with `syscall_id` and other arguments
 pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
+    // Increment syscall counter
+    {
+        let mut counter = SYSCALL_COUNTER.exclusive_access();
+        counter.increment(syscall_id);
+    }
+    
     match syscall_id {
         SYSCALL_WRITE => sys_write(args[0], args[1] as *const u8, args[2]),
         SYSCALL_EXIT => sys_exit(args[0] as i32),
