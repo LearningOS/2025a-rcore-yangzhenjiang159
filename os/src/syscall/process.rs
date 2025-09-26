@@ -3,8 +3,6 @@ use crate::{
     task::{exit_current_and_run_next, suspend_current_and_run_next},
     timer::get_time_us,
 };
-use crate::sync::UPSafeCell;
-use lazy_static::*;
 
 #[repr(C)]
 #[derive(Debug)]
