@@ -22,38 +22,6 @@ pub enum TraceRequest {
     Syscall = 2,
 }
 
-/// Global syscall counter
-struct SyscallCounter {
-    counts: [usize; 512], // Support up to 512 different syscall IDs
-}
-
-impl SyscallCounter {
-    fn new() -> Self {
-        Self {
-            counts: [0; 512],
-        }
-    }
-    
-    fn increment(&mut self, syscall_id: usize) {
-        if syscall_id < 512 {
-            self.counts[syscall_id] += 1;
-        }
-    }
-    
-    fn get_count(&self, syscall_id: usize) -> usize {
-        if syscall_id < 512 {
-            self.counts[syscall_id]
-        } else {
-            0
-        }
-    }
-}
-
-lazy_static! {
-    static ref SYSCALL_COUNTER: UPSafeCell<SyscallCounter> = unsafe {
-        UPSafeCell::new(SyscallCounter::new())
-    };
-}
 
 /// task exits and submit an exit code
 pub fn sys_exit(exit_code: i32) -> ! {
@@ -125,8 +93,7 @@ pub fn sys_trace(trace_request: usize, id: usize, data: usize) -> isize {
         }
         TraceRequest::Syscall => {
             // Get syscall count
-            let counter = SYSCALL_COUNTER.exclusive_access();
-            counter.get_count(id) as isize
+            crate::syscall::get_syscall_count(id) as isize
         }
     }
 }

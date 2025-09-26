@@ -46,12 +46,26 @@ impl SyscallCounter {
             self.counts[syscall_id] += 1;
         }
     }
+    
+    fn get_count(&self, syscall_id: usize) -> usize {
+        if syscall_id < 512 {
+            self.counts[syscall_id]
+        } else {
+            0
+        }
+    }
 }
 
 lazy_static! {
     static ref SYSCALL_COUNTER: UPSafeCell<SyscallCounter> = unsafe {
         UPSafeCell::new(SyscallCounter::new())
     };
+}
+
+/// Get the count of a specific syscall
+pub fn get_syscall_count(syscall_id: usize) -> usize {
+    let counter = SYSCALL_COUNTER.exclusive_access();
+    counter.get_count(syscall_id)
 }
 
 /// handle syscall exception with `syscall_id` and other arguments
