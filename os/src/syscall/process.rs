@@ -21,7 +21,7 @@ pub enum TraceRequest {
 }
 
 
-/// task exits and submit an exit code
+/// task exits and submit an exit code 1
 pub fn sys_exit(exit_code: i32) -> ! {
     trace!("[kernel] Application exited with code {}", exit_code);
     exit_current_and_run_next();
